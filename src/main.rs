@@ -4,6 +4,7 @@
 // #![feature(str_words)]
 
 extern crate mmap;
+extern crate libc;
 // extern crate alloc;
 // extern crate core;
 // extern crate test;

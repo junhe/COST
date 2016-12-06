@@ -4,6 +4,7 @@ use std::ops;
 use std::slice;
 use std::fs::File;
 use std::marker::PhantomData;
+use libc;
 
 use mmap::MapOption::{MapReadable, MapFd};
 use mmap::MemoryMap;
@@ -18,8 +19,13 @@ impl<T:Copy> TypedMemoryMap<T> {
     pub fn new(filename: String) -> TypedMemoryMap<T> {
         let file = File::open(filename).unwrap();
         let size = file.metadata().unwrap().len() as usize;
+        let tmpmap = MemoryMap::new(size, &[MapReadable, MapFd(file.as_raw_fd())]).unwrap();
+        unsafe {
+            //libc::madvise(tmpmap.data() as *mut libc::c_void, size, libc::MADV_RANDOM);
+            libc::madvise(tmpmap.data() as *mut libc::c_void, size, libc::MADV_NORMAL);
+        }
         TypedMemoryMap {
-            map: MemoryMap::new(size, &[MapReadable, MapFd(file.as_raw_fd())]).unwrap(),
+            map: tmpmap,
             len: size,
             phn: PhantomData,
         }
